@@ -16,7 +16,7 @@ saveData <- function(data, part) {
     if (part == "morning") {
         names(data) <- fields_m
         data$sl_hygiene <- str_c(data$sl_hygiene, collapse = ", ")
-        data <- as.data.frame(data)
+        data <- as.data.frame(data, stringsAsFactors = FALSE)
         if (hour(data$time_bed) > 12) {
             date(data$time_bed) <- date(data$time_bed) - 1
         }
@@ -42,7 +42,7 @@ saveData <- function(data, part) {
         }
     } else if (part == "evening") {
         names(data) <- fields_e
-        data <- as.data.frame(data)
+        data <- as.data.frame(data, stringsAsFactors = FALSE)
         morn <- rep(NA, length(fields_m))
         names(morn) <- fields_m
         morn <- as.data.frame(t(morn))
@@ -51,7 +51,7 @@ saveData <- function(data, part) {
         if (exists("responses")) {
             if (sum(responses$date == Sys.Date()) == 1) {
                 ind <- responses$date == Sys.Date()
-                dat_use <- cbind(responses[ind, 1:8, drop = FALSE],
+                dat_use <- cbind(responses[ind, 1:length(fields_m), drop = FALSE],
                                  data)
                 responses <<- responses[-ind,]
                 responses <<- rbind(responses, dat_use)
@@ -92,7 +92,8 @@ shinyApp(
                        checkboxGroupInput("sl_hygiene", 
                                          "Which of following have I done last night?",
                                          choices = c("No blue light", "Hot shower",
-                                                     "Keep room dark", "Meditation")),
+                                                     "Keep room dark", "Meditation",
+                                                     "Get up after 20", "Melatonin")),
                        timeInput("time_bed", "When did I go to bed last night?", seconds = FALSE),
                        timeInput("time_slp", "When did I feel sleepy last night?", seconds = FALSE),
                        radioButtons("if_woke", "Did I wake up after falling asleep last night?",
@@ -109,14 +110,14 @@ shinyApp(
             #####
             # Evening section, to be filled in the evening
             wellPanel(tags$h2("Evening"),
-                       tags$p(strong("Caffeine Consumption")),
-                       numericInput("n_coffee", 
-                                    "How much coffee did I consume (approx. in ml)?",
-                                    value = 0),
-                       numericInput("n_btea", "How much black tea did I consume?",
-                                    value = 0),
-                       numericInput("n_gtea", "How much green tea did I consume?",
-                                    value = 0),
+                       tags$p(strong("Caffeine Consumption (ml)")),
+                      fluidRow(column(4, numericInput("n_coffee", 
+                                                      "Coffee",
+                                                      value = 0)),
+                               column(4, numericInput("n_btea", "Black tea",
+                                                      value = 0)),
+                               column(4, numericInput("n_gtea", "Green tea",
+                                                      value = 0))),
                        timeInput("t_caffeine", "When was the latest time when I consumed caffeine?",
                                  seconds = FALSE),
                        tags$hr(),
@@ -175,7 +176,7 @@ shinyApp(
         output$responses <- DT::renderDataTable({
             loadData() %>% 
               datatable() %>% 
-              formatDate(c(3,4,8,12,14:16), "toLocaleString")
+              formatDate(c(3,4,8,13,15:17), "toLocaleString")
         })     
     }
 )
