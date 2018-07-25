@@ -6,20 +6,21 @@ library(lubridate)
 library(DT)
 
 # Define the fields we want to save from the form
-fields_m <- c("date", "time_bed", "time_slp", "if_woke", "reasons_woke",
+fields_m <- c("date", "sl_hygiene", "time_bed", "time_slp", "if_woke", "reasons_woke",
               "reasons_awake", "time_ob", "feel_wake")
 fields_e <- c("n_coffee", "n_btea", "n_gtea", "t_caffeine", "if_nap", "nap_start", "nap_end",
               "time_dinner", "if_snack", "medication", "doze", "mood_day", "n_steps",
-              "activities_3h", "activities_1h", "sl_hygiene", "comments")
+              "activities_3h", "activities_1h", "comments")
 tzone <- Sys.timezone()
 saveData <- function(data, part) {
     if (part == "morning") {
-      data <- as.data.frame(data)
         names(data) <- fields_m
-        if (hour(data$time_bed) > hms("12:00:00")) {
+        data$sl_hygiene <- str_c(data$sl_hygiene, collapse = ", ")
+        data <- as.data.frame(data)
+        if (hour(data$time_bed) > 12) {
             date(data$time_bed) <- date(data$time_bed) - 1
         }
-        if (hour(data$time_slp) > hms("12:00:00")) {
+        if (hour(data$time_slp) > 12) {
             date(data$time_slp) <- date(data$time_slp) - 1
         }
         eve <- rep(NA, length(fields_e))
@@ -41,7 +42,6 @@ saveData <- function(data, part) {
         }
     } else if (part == "evening") {
         names(data) <- fields_e
-        data$sl_hygiene <- str_c(data$sl_hygiene, collapse = ", ")
         data <- as.data.frame(data)
         morn <- rep(NA, length(fields_m))
         names(morn) <- fields_m
@@ -89,6 +89,10 @@ shinyApp(
                        dateInput("date", "Date"),
                        tags$hr(),
                        tags$p(strong("Last night's sleep")),
+                       checkboxGroupInput("sl_hygiene", 
+                                         "Which of following have I done last night?",
+                                         choices = c("No blue light", "Hot shower",
+                                                     "Keep room dark", "Meditation")),
                        timeInput("time_bed", "When did I go to bed last night?", seconds = FALSE),
                        timeInput("time_slp", "When did I feel sleepy last night?", seconds = FALSE),
                        radioButtons("if_woke", "Did I wake up after falling asleep last night?",
@@ -136,10 +140,6 @@ shinyApp(
                        numericInput("n_steps", "How many steps did I walk today?", value = 0),
                        textAreaInput("activities_3h", "What did I do 1-3 hours before bed?"),
                        textAreaInput("activities_1h", "What did I do 1 hour before bed?"),
-                      checkboxGroupInput("sl_hygiene", 
-                                         "Which of following have I done last night?",
-                                         choices = c("No blue light", "Hot shower",
-                                                     "Keep room dark", "Meditation")),
                        textAreaInput("comments", "Other comments"),
                        actionButton("submit_e", "Submit for evening"))
                  )
@@ -173,10 +173,9 @@ shinyApp(
         # Show the previous responses
         # (update with current response when Submit is clicked)
         output$responses <- DT::renderDataTable({
-            input$submit
             loadData() %>% 
               datatable() %>% 
-              formatDate(c(2,3,7,11,13,14,15), "toLocaleString")
+              formatDate(c(3,4,8,12,14:16), "toLocaleString")
         })     
     }
 )
