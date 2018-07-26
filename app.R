@@ -6,16 +6,17 @@ library(lubridate)
 library(DT)
 
 # Define the fields we want to save from the form
-fields_m <- c("date", "sl_hygiene", "time_bed", "time_slp", "if_woke", "reasons_woke",
+fields_m <- c("date", "sl_hygiene", "time_bed", "time_slp", "if_woke", "duration_woke", "reasons_woke",
               "reasons_awake", "time_ob", "feel_wake")
 fields_e <- c("n_coffee", "n_btea", "n_gtea", "t_caffeine", "if_nap", "nap_start", "nap_end",
               "time_dinner", "if_snack", "medication", "doze", "mood_day", "n_steps",
-              "activities_3h", "activities_1h", "comments")
+              "activities_3h", "activities_1h", "temp", "comments")
 tzone <- Sys.timezone()
 saveData <- function(data, part) {
     if (part == "morning") {
         names(data) <- fields_m
         data$sl_hygiene <- str_c(data$sl_hygiene, collapse = ", ")
+        data$duration_woke <- paste(hour(data$duration_woke), minute(data$duration_woke), sep = ":")
         data <- as.data.frame(data, stringsAsFactors = FALSE)
         if (hour(data$time_bed) > 12) {
             date(data$time_bed) <- date(data$time_bed) - 1
@@ -93,11 +94,12 @@ shinyApp(
                                          "Which of following have I done last night?",
                                          choices = c("No blue light", "Hot shower",
                                                      "Keep room dark", "Meditation",
-                                                     "Get up after 20", "Melatonin")),
+                                                     "Get up after 20", "Melatonin", "Using earplugs")),
                        timeInput("time_bed", "When did I go to bed last night?", seconds = FALSE),
-                       timeInput("time_slp", "When did I feel sleepy last night?", seconds = FALSE),
+                       timeInput("time_slp", "When did I feel like falling asleep last night?", seconds = FALSE),
                        radioButtons("if_woke", "Did I wake up after falling asleep last night?",
                                     choices = c("Yes", "No")),
+                       timeInput("duration_woke", "How long have I been awake after falling sleep?", seconds = FALSE),
                        textAreaInput("reasons_woke", "What (if anything) woke me up?"),
                        textAreaInput("reasons_awake", 
                                      "What (if anything) kept me up if I couldn't fall asleep?"),
@@ -141,6 +143,7 @@ shinyApp(
                        numericInput("n_steps", "How many steps did I walk today?", value = 0),
                        textAreaInput("activities_3h", "What did I do 1-3 hours before bed?"),
                        textAreaInput("activities_1h", "What did I do 1 hour before bed?"),
+                       numericInput("temp", "Room temperature when I was sleeping (F)", value = 70),
                        textAreaInput("comments", "Other comments"),
                        actionButton("submit_e", "Submit for evening"))
                  )
@@ -176,7 +179,7 @@ shinyApp(
         output$responses <- DT::renderDataTable({
             loadData() %>% 
               datatable() %>% 
-              formatDate(c(3,4,8,13,15:17), "toLocaleString")
+              formatDate(c(3,4,9,14,16:18), "toLocaleString")
         })     
     }
 )
