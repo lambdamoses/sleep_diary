@@ -5,6 +5,8 @@ library(tidyverse)
 library(lubridate)
 library(DT)
 
+# To do: Make the plotting page, do text analysis of the text areas and put it in the app
+
 # Define the fields we want to save from the form
 fields_m <- c("date", "sl_hygiene", "time_bed", "time_slp", "if_woke", "duration_woke", "reasons_woke",
               "reasons_awake", "time_ob", "feel_wake")
@@ -30,7 +32,7 @@ saveData <- function(data, part) {
         dat_use <- cbind(data, eve)
         if (exists("responses")) {
           if (sum(responses$date == Sys.Date()) == 1) {
-            ind <- responses$date == Sys.Date()
+            ind <- which(responses$date == Sys.Date())
             responses <<- responses[-ind,]
             responses <<- rbind(responses, dat_use)
           } else if (!any(responses$date == Sys.Date())) {
@@ -51,7 +53,7 @@ saveData <- function(data, part) {
         morn[,1] <- as.Date(morn[,1], origin = "1970-01-01")
         if (exists("responses")) {
             if (sum(responses$date == Sys.Date()) == 1) {
-                ind <- responses$date == Sys.Date()
+                ind <- which(responses$date == Sys.Date())
                 dat_use <- cbind(responses[ind, 1:length(fields_m), drop = FALSE],
                                  data)
                 responses <<- responses[-ind,]
@@ -94,7 +96,8 @@ shinyApp(
                                          "Which of following have I done last night?",
                                          choices = c("No blue light", "Hot shower",
                                                      "Keep room dark", "Meditation",
-                                                     "Get up after 20", "Melatonin", "Using earplugs")),
+                                                     "Get up after 20", "Melatonin", "Using earplugs",
+                                                     "Stretching")),
                        timeInput("time_bed", "When did I go to bed last night?", seconds = FALSE),
                        timeInput("time_slp", "When did I feel like falling asleep last night?", seconds = FALSE),
                        radioButtons("if_woke", "Did I wake up after falling asleep last night?",
