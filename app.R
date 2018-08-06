@@ -13,8 +13,8 @@ fields_m <- c("date", "sl_hygiene", "time_bed", "time_slp", "if_woke", "duration
 fields_e <- c("n_coffee", "n_btea", "n_gtea", "t_caffeine", "if_nap", "nap_start", "nap_end",
               "time_dinner", "if_snack", "medication", "doze", "mood_day", "n_steps",
               "activities_3h", "activities_1h", "temp", "comments")
-tzone <- Sys.timezone()
-saveData <- function(data, part) {
+#tzone <- Sys.timezone()
+saveData <- function(data, part, curr_date) {
     if (part == "morning") {
         names(data) <- fields_m
         data$sl_hygiene <- str_c(data$sl_hygiene, collapse = ", ")
@@ -31,11 +31,11 @@ saveData <- function(data, part) {
         eve <- as.data.frame(t(eve))
         dat_use <- cbind(data, eve)
         if (exists("responses")) {
-          if (sum(responses$date == Sys.Date()) == 1) {
-            ind <- which(responses$date == Sys.Date())
+          if (sum(responses$date == curr_date) == 1) {
+            ind <- which(responses$date == curr_date)
             responses <<- responses[-ind,]
             responses <<- rbind(responses, dat_use)
-          } else if (!any(responses$date == Sys.Date())) {
+          } else if (!any(responses$date == curr_date)) {
             responses <<- rbind(responses, dat_use)
           } else {
             stop("Each day should only have one row")
@@ -49,16 +49,16 @@ saveData <- function(data, part) {
         morn <- rep(NA, length(fields_m))
         names(morn) <- fields_m
         morn <- as.data.frame(t(morn))
-        morn[1,1] <- Sys.Date()
+        morn[1,1] <- curr_date
         morn[,1] <- as.Date(morn[,1], origin = "1970-01-01")
         if (exists("responses")) {
-            if (sum(responses$date == Sys.Date()) == 1) {
-                ind <- which(responses$date == Sys.Date())
+            if (sum(responses$date == curr_date) == 1) {
+                ind <- which(responses$date == curr_date)
                 dat_use <- cbind(responses[ind, 1:length(fields_m), drop = FALSE],
                                  data)
                 responses <<- responses[-ind,]
                 responses <<- rbind(responses, dat_use)
-            } else if (!any(responses$date == Sys.Date())) {
+            } else if (!any(responses$date == curr_date)) {
                 dat_use <- cbind(morn, data)
                 responses <<- rbind(responses, dat_use)
             } else {
@@ -85,12 +85,11 @@ shinyApp(
         navbarPage(title = "Sleep Diary",
         tabPanel(
         title = "Data Collection", 
+        dateInput("date", "Date"),
           splitLayout(
             ##### 
             # Morning section, to be filled in the morning
             wellPanel(tags$h2("Morning"),
-                       dateInput("date", "Date"),
-                       tags$hr(),
                        tags$p(strong("Last night's sleep")),
                        checkboxGroupInput("sl_hygiene", 
                                          "Which of following have I done last night?",
@@ -157,10 +156,11 @@ shinyApp(
              DT::dataTableOutput("responses")),
     #####
     # Plot data
-    tabPanel(title = "Plot Data"))),
+    tabPanel(title = "Plot Data",
+             p("TBA")))),
     
     server = function(input, output, session) {
-        
+        curr_date <- reactive(input$date)
         # Whenever a field is filled, aggregate all form data
         formMorning <- reactive({
             data <- lapply(fields_m, function(x) input[[x]])
@@ -172,10 +172,10 @@ shinyApp(
         })
         # When the Submit button is clicked, save the form data
         observeEvent(input$submit_m, {
-            saveData(formMorning(), "morning")
+            saveData(formMorning(), "morning", curr_date())
         })
         observeEvent(input$submit_e, {
-            saveData(formEvening(), "evening")
+            saveData(formEvening(), "evening", curr_date())
         })
         # Show the previous responses
         # (update with current response when Submit is clicked)
