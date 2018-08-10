@@ -3,7 +3,7 @@ This is a Shiny app I built to keep a sleep diary, to identify what may help me 
 ## To do
 1. Once I accumulate enough sleep data, figure out what analysis is the most helpful for identifying what may improve insomnia and implement it in the plotting page in the app to produce a report that can be downloaded
 2. Implement login screen to support multiple users
-3. Right now you can only enter data for the current day. I should make it possible to enter data from any given day
-4. Change to more meaningful column names when viewing data
+3. Right now you can only use 24 hour format to input time. It would be nice if the user can choose between 12 and 24 hour formats.
+4. Try displaying data as plain text, showing data for one day at a time; the table is hard to read.
 5. Allow users to download data
 6. Use text mining to analyze unstructured comments
